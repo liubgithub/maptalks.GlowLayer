@@ -1,24 +1,24 @@
-# maptalks.snapto
+# maptalks.GlowLayer
 
-[![CircleCI](https://circleci.com/gh/maptalks/maptalks.snapto.svg?style=shield)](https://circleci.com/gh/maptalks/maptalks.snapto)
-[![NPM Version](https://img.shields.io/npm/v/maptalks.snapto.svg)](https://github.com/maptalks/maptalks.snapto)
+[![CircleCI](https://circleci.com/gh/maptalks/maptalks.GlowLayer.svg?style=shield)](https://circleci.com/gh/maptalks/maptalks.GlowLayer)
+[![NPM Version](https://img.shields.io/npm/v/maptalks.GlowLayer.svg)](https://github.com/maptalks/maptalks.GlowLayer)
 
 A plugin used for mouse point to adsorb geometries, based on [snap interaction](http://openlayers.org/en/latest/examples/snap.html).
 
 ## Install
   
-* Install with npm: ```npm install maptalks.snapto```. 
-* Download from [dist directory](https://github.com/liubgithub/maptalks.snapto/tree/master/dist).
-* Use unpkg CDN: ```https://unpkg.com/maptalks.snapto/dist/maptalks.snapto.min.js```
+* Install with npm: ```npm install maptalks.GlowLayer```. 
+* Download from [dist directory](https://github.com/liubgithub/maptalks.GlowLayer/tree/master/dist).
+* Use unpkg CDN: ```https://unpkg.com/maptalks.GlowLayer/dist/maptalks.GlowLayer.min.js```
 
 ## Usage
 
-As a plugin, ```maptalks.snapto``` must be loaded after ```maptalks.js``` in browsers. You can also use ```'import { SnapTool } from "maptalks.snapto"``` when develope with webpack.
+As a plugin, ```maptalks.GlowLayer``` must be loaded after ```maptalks.js``` in browsers. You can also use ```'import { GlowLayerol } from "maptalks.GlowLayer"``` when develope with webpack.
 ```html
 <script type="text/javascript" src="https://unpkg.com/maptalks/dist/maptalks.min.js"></script>
-<script type="text/javascript" src="https://unpkg.com/maptalks.snapto/dist/maptalks.snapto.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/maptalks.GlowLayer/dist/maptalks.GlowLayer.min.js"></script>
 <script>
-   var snap = new maptalks.SnapTool({
+   var snap = new maptalks.GlowLayer({
                 tolerance: 20,
                 mode : 'point'
             });
@@ -34,7 +34,7 @@ IE 9-11, Chrome, Firefox, other modern and mobile browsers.
 
 ## Examples
 
-* [See the demo](https://maptalks.github.io/maptalks.snapto/demo/index.html).
+* [See the demo](https://maptalks.github.io/maptalks.GlowLayer/demo/index.html).
 
 ## API Reference
 
