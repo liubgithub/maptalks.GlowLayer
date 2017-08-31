@@ -42,8 +42,5 @@
   },
   "peerDependencies": {
     "maptalks": "^0.16.0"
-  },
-  "dependencies": {
-    "geojson-rbush": "^1.1.1"
   }
 }
