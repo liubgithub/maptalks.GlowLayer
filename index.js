@@ -1,7 +1,7 @@
 import * as maptalks from 'maptalks';
 
 const options = {
-    color:'#1afb56'
+    color:[255, 106, 106]
 };
 
 /**
@@ -14,31 +14,105 @@ const options = {
  * MIT License
  */
 export class GlowLayer extends maptalks.CanvasLayer {
-   constructor(id, options){
-      super(id, options);
-   }
+    constructor(id, options) {
+        super(id, options);
+        this.geometries = [];
+        this.draw = this._draw;
+    }
 
-   prepareToDraw(context) {
+    addGeometry(geometry) {
+        if (geometry instanceof maptalks.Geometry) {
+            const type = geometry.getType();
+            if (type.indexOf('Polygon') > -1 || type.indexOf('LineString') > -1) {
+                this.geometries.push(geometry);
+                this._draw(this.renderContext);
+            }
+        }
+    }
 
-   }
+    addGeometries(geometries) {
+        if (geometries instanceof Array) {
+            for (let i = 0; i < geometries.length; i++) {
+                this.addGeometry(geometries[i]);
+            }
+        }
+    }
 
-   draw(context) {
+    prepareToDraw(context) {
+        this.renderContext = context;
+    }
 
-   }
+    _draw(context) {
+        for (let i = 0; i < this.geometries.length; i++) {
+            const geo = this.geometries[i];
+            this._drawGeometry(geo, context);
+        }
+    }
 
-   requestMapToRender() {
+    requestMapToRender() {
 
-   }
+    }
 
-   completeRender() {
-      this.fire('layerload',{});
-   }
+    completeRender() {
+        this.fire('layerload', { target:this });
+    }
 
-   addGeometry() {
+    _drawGeometry(geometry, context) {
+        const coordinates = geometry.getCoordinates();
+         //two cases,one is single geometry,and another is multi geometries
+        if (coordinates[0] instanceof Array) {
+            coordinates.forEach(function (coords) {
+                this._drawLine(coords, context);
+            }.bind(this));
+        } else {
+            this._drawLine(coordinates, context);
+        }
+    }
 
-   }
+    _drawLine(coordinates, context) {
+        const color = this.options['color'];
+        const map = this.getMap();
+        for (let j = 5; j >= 0; j--) {
+            context.beginPath();
+                // draw each line, the last line in each is always white
+            context.lineWidth = (j + 1) * 4 - 2;
+            if (j === 0) {
+                context.strokeStyle = '#fff';
+            } else {
+                context.strokeStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',0.2)';
+            }
+            const len = coordinates.length - 1;
+            for (let i = 0; i < len; i++) {
+                const coordFrom = map.coordinateToContainerPoint(coordinates[i]);
+                const coordTo = map.coordinateToContainerPoint(coordinates[i + 1]);
+                if (i === 0) {
+                    context.moveTo(coordFrom.x, coordFrom.y);
+                } else if (i > 0 && i < len - 1) {
+                    context.lineTo(coordTo.x, coordTo.y);
+                } else {
+                    context.stroke();
+                }
+            }
+        }
+    }
 
 }
 
-SnapTool.mergeOptions(options);
+GlowLayer.mergeOptions(options);
+
+class GlowLayerRenderer extends maptalks.renderer.CanvasLayerRenderer {
+
+    onZoomEnd() {
+        super.onZoomEnd.apply(this, arguments);
+    }
+
+    onResize() {
+        super.onResize.apply(this, arguments);
+    }
+
+    onRemove() {
+    }
+}
+
+GlowLayer.registerRenderer('canvas', GlowLayerRenderer);
 
