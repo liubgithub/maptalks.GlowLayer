@@ -81,18 +81,18 @@ export class GlowLayer extends maptalks.CanvasLayer {
             } else {
                 context.strokeStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',0.2)';
             }
-            const len = coordinates.length - 1;
+            const len = coordinates.length;
             for (let i = 0; i < len; i++) {
-                const coordFrom = map.coordinateToContainerPoint(coordinates[i]);
-                const coordTo = map.coordinateToContainerPoint(coordinates[i + 1]);
                 if (i === 0) {
+                    const coordFrom = map.coordinateToContainerPoint(coordinates[i]);
                     context.moveTo(coordFrom.x, coordFrom.y);
-                } else if (i > 0 && i < len - 1) {
-                    context.lineTo(coordTo.x, coordTo.y);
                 } else {
-                    context.stroke();
+                    const coordTo = map.coordinateToContainerPoint(coordinates[i]);
+                    context.lineTo(coordTo.x, coordTo.y);
                 }
             }
+            context.stroke();
+            context.closePath();
         }
     }
 
