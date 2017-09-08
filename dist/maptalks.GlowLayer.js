@@ -33,55 +33,57 @@ var options = {
  *
  * MIT License
  */
-var GlowLayer = function (_maptalks$CanvasLayer) {
-    _inherits(GlowLayer, _maptalks$CanvasLayer);
+var GlowLayer = function (_maptalks$VectorLayer) {
+    _inherits(GlowLayer, _maptalks$VectorLayer);
 
     function GlowLayer(id, options) {
         _classCallCheck(this, GlowLayer);
 
-        var _this = _possibleConstructorReturn(this, _maptalks$CanvasLayer.call(this, id, options));
-
-        _this.geometries = [];
-        _this.draw = _this._draw;
-        return _this;
+        return _possibleConstructorReturn(this, _maptalks$VectorLayer.call(this, id, options));
     }
 
-    GlowLayer.prototype.addGeometry = function addGeometry(geometry) {
-        if (geometry instanceof maptalks.Geometry) {
-            var type = geometry.getType();
-            if (type.indexOf('Polygon') > -1 || type.indexOf('LineString') > -1) {
-                this.geometries.push(geometry);
-                this._draw(this.renderContext);
-            }
+    GlowLayer.prototype.addGeometry = function addGeometry(geometries) {
+        if (geometries instanceof maptalks.Geometry) {
+            geometries = [geometries];
         }
-    };
-
-    GlowLayer.prototype.addGeometries = function addGeometries(geometries) {
-        if (geometries instanceof Array) {
-            for (var i = 0; i < geometries.length; i++) {
-                this.addGeometry(geometries[i]);
+        geometries.forEach(function (geo, index) {
+            var type = geo.getType();
+            if (type.indexOf('Polygon') < 0 && type.indexOf('LineString') < 0) {
+                throw new Error('The geometry at ' + index + ' to add can not be added to layer');
             }
-        }
+        });
+        return _maptalks$VectorLayer.prototype.addGeometry.apply(this, arguments);
     };
 
-    GlowLayer.prototype.prepareToDraw = function prepareToDraw(context) {
-        this.renderContext = context;
-    };
+    return GlowLayer;
+}(maptalks.VectorLayer);
 
-    GlowLayer.prototype._draw = function _draw(context) {
+GlowLayer.mergeOptions(options);
+
+var GlowLayerRenderer = function (_maptalks$renderer$Ov) {
+    _inherits(GlowLayerRenderer, _maptalks$renderer$Ov);
+
+    function GlowLayerRenderer() {
+        _classCallCheck(this, GlowLayerRenderer);
+
+        return _possibleConstructorReturn(this, _maptalks$renderer$Ov.apply(this, arguments));
+    }
+
+    GlowLayerRenderer.prototype.draw = function draw() {
+        this.prepareCanvas();
+        var context = this.context;
+        this._currentGeometries = this.layer.geometries();
         for (var i = 0; i < this.geometries.length; i++) {
             var geo = this.geometries[i];
             this._drawGeometry(geo, context);
         }
     };
 
-    GlowLayer.prototype.requestMapToRender = function requestMapToRender() {};
-
-    GlowLayer.prototype.completeRender = function completeRender() {
+    GlowLayerRenderer.prototype.completeRender = function completeRender() {
         this.fire('layerload', { target: this });
     };
 
-    GlowLayer.prototype._drawGeometry = function _drawGeometry(geometry, context) {
+    GlowLayerRenderer.prototype._drawGeometry = function _drawGeometry(geometry, context) {
         var coordinates = geometry.getCoordinates();
         //two cases,one is single geometry,and another is multi geometries
         if (coordinates[0] instanceof Array) {
@@ -93,7 +95,7 @@ var GlowLayer = function (_maptalks$CanvasLayer) {
         }
     };
 
-    GlowLayer.prototype._drawLine = function _drawLine(coordinates, context) {
+    GlowLayerRenderer.prototype._drawLine = function _drawLine(coordinates, context) {
         var color = this.options['color'];
         var map = this.getMap();
         for (var j = 5; j >= 0; j--) {
@@ -110,43 +112,18 @@ var GlowLayer = function (_maptalks$CanvasLayer) {
                 if (i === 0) {
                     var coordFrom = map.coordinateToContainerPoint(coordinates[i]);
                     context.moveTo(coordFrom.x, coordFrom.y);
-                } else if (i > 0 && i < len - 1) {
-                    var coordTo = map.coordinateToContainerPoint(coordinates[i + 1]);
-                    context.lineTo(coordTo.x, coordTo.y);
                 } else {
-                    context.stroke();
+                    var coordTo = map.coordinateToContainerPoint(coordinates[i]);
+                    context.lineTo(coordTo.x, coordTo.y);
                 }
             }
-            //context.closePath();
+            context.stroke();
+            context.closePath();
         }
     };
 
-    return GlowLayer;
-}(maptalks.CanvasLayer);
-
-GlowLayer.mergeOptions(options);
-
-var GlowLayerRenderer = function (_maptalks$renderer$Ca) {
-    _inherits(GlowLayerRenderer, _maptalks$renderer$Ca);
-
-    function GlowLayerRenderer() {
-        _classCallCheck(this, GlowLayerRenderer);
-
-        return _possibleConstructorReturn(this, _maptalks$renderer$Ca.apply(this, arguments));
-    }
-
-    GlowLayerRenderer.prototype.onZoomEnd = function onZoomEnd() {
-        _maptalks$renderer$Ca.prototype.onZoomEnd.apply(this, arguments);
-    };
-
-    GlowLayerRenderer.prototype.onResize = function onResize() {
-        _maptalks$renderer$Ca.prototype.onResize.apply(this, arguments);
-    };
-
-    GlowLayerRenderer.prototype.onRemove = function onRemove() {};
-
     return GlowLayerRenderer;
-}(maptalks.renderer.CanvasLayerRenderer);
+}(maptalks.renderer.OverlayLayerCanvasRenderer);
 
 GlowLayer.registerRenderer('canvas', GlowLayerRenderer);
 

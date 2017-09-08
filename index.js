@@ -13,44 +13,37 @@ const options = {
  *
  * MIT License
  */
-export class GlowLayer extends maptalks.CanvasLayer {
+export class GlowLayer extends maptalks.VectorLayer {
     constructor(id, options) {
         super(id, options);
-        this.geometries = [];
-        this.draw = this._draw;
     }
 
-    addGeometry(geometry) {
-        if (geometry instanceof maptalks.Geometry) {
-            const type = geometry.getType();
-            if (type.indexOf('Polygon') > -1 || type.indexOf('LineString') > -1) {
-                this.geometries.push(geometry);
-                this._draw(this.renderContext);
-            }
+    addGeometry(geometries) {
+        if (geometries instanceof maptalks.Geometry) {
+            geometries = [geometries];
         }
-    }
-
-    addGeometries(geometries) {
-        if (geometries instanceof Array) {
-            for (let i = 0; i < geometries.length; i++) {
-                this.addGeometry(geometries[i]);
+        geometries.forEach(function (geo, index) {
+            const type = geo.getType();
+            if (type.indexOf('Polygon') < 0 && type.indexOf('LineString') < 0) {
+                throw new Error('The geometry at ' + index + ' can not be added to layer');
             }
-        }
+        });
+        return super.addGeometry.apply(this, arguments);
     }
+}
 
-    prepareToDraw(context) {
-        this.renderContext = context;
-    }
+GlowLayer.mergeOptions(options);
 
-    _draw(context) {
+class GlowLayerRenderer extends maptalks.renderer.OverlayLayerCanvasRenderer {
+
+    draw() {
+        this.prepareCanvas();
+        const context = this.context;
+        this._currentGeometries = this.layer.getGeometries();
         for (let i = 0; i < this.geometries.length; i++) {
             const geo = this.geometries[i];
             this._drawGeometry(geo, context);
         }
-    }
-
-    requestMapToRender() {
-
     }
 
     completeRender() {
@@ -59,7 +52,7 @@ export class GlowLayer extends maptalks.CanvasLayer {
 
     _drawGeometry(geometry, context) {
         const coordinates = geometry.getCoordinates();
-         //two cases,one is single geometry,and another is multi geometries
+        //two cases,one is single geometry,and another is multi geometries
         if (coordinates[0] instanceof Array) {
             coordinates.forEach(function (coords) {
                 this._drawLine(coords, context);
@@ -74,7 +67,7 @@ export class GlowLayer extends maptalks.CanvasLayer {
         const map = this.getMap();
         for (let j = 5; j >= 0; j--) {
             context.beginPath();
-                // draw each line, the last line in each is always white
+            // draw each line, the last line in each is always white
             context.lineWidth = (j + 1) * 4 - 2;
             if (j === 0) {
                 context.strokeStyle = '#fff';
@@ -94,23 +87,6 @@ export class GlowLayer extends maptalks.CanvasLayer {
             context.stroke();
             context.closePath();
         }
-    }
-
-}
-
-GlowLayer.mergeOptions(options);
-
-class GlowLayerRenderer extends maptalks.renderer.CanvasLayerRenderer {
-
-    onZoomEnd() {
-        super.onZoomEnd.apply(this, arguments);
-    }
-
-    onResize() {
-        super.onResize.apply(this, arguments);
-    }
-
-    onRemove() {
     }
 }
 
