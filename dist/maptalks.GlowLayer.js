@@ -21,7 +21,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
 
 var options = {
-    color: [255, 106, 106]
+    color: [255, 106, 106, 0.2],
+    lineJoin: 'round'
 };
 
 /**
@@ -49,7 +50,7 @@ var GlowLayer = function (_maptalks$VectorLayer) {
         geometries.forEach(function (geo, index) {
             var type = geo.getType();
             if (type.indexOf('Polygon') < 0 && type.indexOf('LineString') < 0) {
-                throw new Error('The geometry at ' + index + ' to add can not be added to layer');
+                throw new Error('The geometry at ' + index + ' can not be added to layer');
             }
         });
         return _maptalks$VectorLayer.prototype.addGeometry.apply(this, arguments);
@@ -70,42 +71,61 @@ var GlowLayerRenderer = function (_maptalks$renderer$Ov) {
     }
 
     GlowLayerRenderer.prototype.draw = function draw() {
+        var drawCount = 0;
         this.prepareCanvas();
-        var context = this.context;
-        this._currentGeometries = this.layer.geometries();
-        for (var i = 0; i < this.geometries.length; i++) {
-            var geo = this.geometries[i];
-            this._drawGeometry(geo, context);
+        this._currentGeometries = this.layer.getGeometries();
+        for (var i = 0; i < this._currentGeometries.length; i++) {
+            var geo = this._currentGeometries[i];
+            if (this._isInViewExtent(geo)) {
+                this._drawGeometry(geo);
+                drawCount += 1;
+            }
         }
+        if (!this.layer.isLoaded()) {
+            this.completeRender();
+        }
+        console.log(drawCount);
+        drawCount = 0;
     };
 
-    GlowLayerRenderer.prototype.completeRender = function completeRender() {
-        this.fire('layerload', { target: this });
+    GlowLayerRenderer.prototype._isInViewExtent = function _isInViewExtent(geometry) {
+        var isIn = true;
+        var map = this.layer.getMap();
+        this._drawnExtent = map.getExtent();
+        var geoExtent = geometry.getExtent();
+        if (this._drawnExtent.intersects(geoExtent)) {
+            isIn = true;
+        } else {
+            isIn = false;
+        }
+        return isIn;
     };
 
-    GlowLayerRenderer.prototype._drawGeometry = function _drawGeometry(geometry, context) {
+    GlowLayerRenderer.prototype._drawGeometry = function _drawGeometry(geometry) {
+        var type = geometry.getType();
         var coordinates = geometry.getCoordinates();
         //two cases,one is single geometry,and another is multi geometries
         if (coordinates[0] instanceof Array) {
             coordinates.forEach(function (coords) {
-                this._drawLine(coords, context);
+                this._drawLine(coords, type);
             }.bind(this));
         } else {
-            this._drawLine(coordinates, context);
+            this._drawLine(coordinates, type);
         }
     };
 
-    GlowLayerRenderer.prototype._drawLine = function _drawLine(coordinates, context) {
-        var color = this.options['color'];
-        var map = this.getMap();
+    GlowLayerRenderer.prototype._drawLine = function _drawLine(coordinates, type) {
+        var context = this.context;
+        var map = this.layer.getMap();
         for (var j = 5; j >= 0; j--) {
             context.beginPath();
             // draw each line, the last line in each is always white
             context.lineWidth = (j + 1) * 4 - 2;
+            context.lineJoin = this.layer.options['lineJoin'];
             if (j === 0) {
                 context.strokeStyle = '#fff';
             } else {
-                context.strokeStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',0.2)';
+                context.strokeStyle = this._getStrokeStyle();
             }
             var len = coordinates.length;
             for (var i = 0; i < len; i++) {
@@ -117,9 +137,26 @@ var GlowLayerRenderer = function (_maptalks$renderer$Ov) {
                     context.lineTo(coordTo.x, coordTo.y);
                 }
             }
-            context.stroke();
-            context.closePath();
+            if (type.indexOf('LineString') > -1) {
+                context.stroke();
+            } else if (type.indexOf('Polygon') > -1) {
+                context.closePath();
+                context.stroke();
+            }
         }
+    };
+
+    GlowLayerRenderer.prototype._getStrokeStyle = function _getStrokeStyle() {
+        var color = this.layer.options['color'];
+        var strokeStyle = null;
+        if (typeof color === 'string' && color.indexOf('#') > -1) {
+            strokeStyle = color;
+        } else if (color instanceof Array) {
+            strokeStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',' + color[3] + ')';
+        } else {
+            throw new Error('stroke color is invalid');
+        }
+        return strokeStyle;
     };
 
     return GlowLayerRenderer;

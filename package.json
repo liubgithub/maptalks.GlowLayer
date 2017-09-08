@@ -1,13 +1,13 @@
 {
   "name": "maptalks.GlowLayer",
-  "version": "0.1.2",
+  "version": "0.1.0",
   "description": "A snap tool used for mouse point to adsorb geometries on map",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/liubgithub/maptalks.GlowLayer"
   },
-  "main": "dist/maptalks.GlowLayer.js",
+  "main": "dist/maptalks.GlowLayer.min.js",
   "scripts": {
     "preversion": "npm test",
     "version": "gulp minify && git add -A dist",

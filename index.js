@@ -1,13 +1,14 @@
 import * as maptalks from 'maptalks';
 
 const options = {
-    color:[255, 106, 106]
+    color:[255, 106, 106, 0.2],
+    lineJoin:'round'
 };
 
 /**
- * A snap tool used for mouse point to adsorb geometries, it extends maptalks.Class.
+ * A layer used to drawing geometry with glowing effects, it extends maptalks.VectorLayer.
  *
- * Thanks to rbush's author, this pluging has used the rbush to inspect surrounding geometries within tolerance(https://github.com/mourner/rbush)
+ * Thanks to Ashley Sheridan, I had got inspiration in this amazing websit(http://www.ashleysheridan.co.uk/blog/Animated+Glowing+Lines+in+Canvas)
  *
  * @author liubgithub(https://github.com/liubgithub)
  *
@@ -25,7 +26,7 @@ export class GlowLayer extends maptalks.VectorLayer {
         geometries.forEach(function (geo, index) {
             const type = geo.getType();
             if (type.indexOf('Polygon') < 0 && type.indexOf('LineString') < 0) {
-                throw new Error('The geometry at ' + index + ' can not be added to layer');
+                throw new Error('The geometry at ' + index + ' can not be added to glowing layer');
             }
         });
         return super.addGeometry.apply(this, arguments);
@@ -38,41 +39,56 @@ class GlowLayerRenderer extends maptalks.renderer.OverlayLayerCanvasRenderer {
 
     draw() {
         this.prepareCanvas();
-        const context = this.context;
         this._currentGeometries = this.layer.getGeometries();
-        for (let i = 0; i < this.geometries.length; i++) {
-            const geo = this.geometries[i];
-            this._drawGeometry(geo, context);
+        for (let i = 0; i < this._currentGeometries.length; i++) {
+            const geo = this._currentGeometries[i];
+            if (this._isInViewExtent(geo)) {
+                this._drawGeometry(geo);
+            }
+        }
+        if (!this.layer.isLoaded()) {
+            this.completeRender();
         }
     }
 
-    completeRender() {
-        this.fire('layerload', { target:this });
+    _isInViewExtent(geometry) {
+        let isIn = true;
+        const map = this.layer.getMap();
+        this._drawnExtent = map.getExtent();
+        const geoExtent = geometry.getExtent();
+        if (this._drawnExtent.intersects(geoExtent)) {
+            isIn = true;
+        } else {
+            isIn = false;
+        }
+        return isIn;
     }
 
-    _drawGeometry(geometry, context) {
+    _drawGeometry(geometry) {
+        const type = geometry.getType();
         const coordinates = geometry.getCoordinates();
         //two cases,one is single geometry,and another is multi geometries
         if (coordinates[0] instanceof Array) {
             coordinates.forEach(function (coords) {
-                this._drawLine(coords, context);
+                this._drawLine(coords, type);
             }.bind(this));
         } else {
-            this._drawLine(coordinates, context);
+            this._drawLine(coordinates, type);
         }
     }
 
-    _drawLine(coordinates, context) {
-        const color = this.options['color'];
-        const map = this.getMap();
+    _drawLine(coordinates, type) {
+        const context = this.context;
+        const map = this.layer.getMap();
         for (let j = 5; j >= 0; j--) {
             context.beginPath();
             // draw each line, the last line in each is always white
             context.lineWidth = (j + 1) * 4 - 2;
+            context.lineJoin = this.layer.options['lineJoin'];
             if (j === 0) {
                 context.strokeStyle = '#fff';
             } else {
-                context.strokeStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',0.2)';
+                context.strokeStyle = this._getStrokeStyle();
             }
             const len = coordinates.length;
             for (let i = 0; i < len; i++) {
@@ -84,9 +100,26 @@ class GlowLayerRenderer extends maptalks.renderer.OverlayLayerCanvasRenderer {
                     context.lineTo(coordTo.x, coordTo.y);
                 }
             }
-            context.stroke();
-            context.closePath();
+            if (type.indexOf('LineString') > -1) {
+                context.stroke();
+            } else if (type.indexOf('Polygon') > -1) {
+                context.closePath();
+                context.stroke();
+            }
         }
+    }
+
+    _getStrokeStyle() {
+        const color = this.layer.options['color'];
+        let strokeStyle = null;
+        if (typeof color === 'string' && color.indexOf('#') > -1) {
+            strokeStyle = color;
+        } else if (color instanceof Array) {
+            strokeStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',' + color[3] + ')';
+        } else {
+            throw new Error('stroke color is invalid');
+        }
+        return strokeStyle;
     }
 }
 

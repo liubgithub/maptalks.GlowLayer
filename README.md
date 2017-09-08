@@ -18,14 +18,10 @@ As a plugin, ```maptalks.GlowLayer``` must be loaded after ```maptalks.js``` in 
 <script type="text/javascript" src="https://unpkg.com/maptalks/dist/maptalks.min.js"></script>
 <script type="text/javascript" src="https://unpkg.com/maptalks.GlowLayer/dist/maptalks.GlowLayer.min.js"></script>
 <script>
-   var snap = new maptalks.GlowLayer({
-                tolerance: 20,
-                mode : 'point'
-            });
-   snap.addTo(map);//when addto map, it will call enable method default.
-   snap.setLayer(layer);
-   //also you can use snap.setGeometries(geometries) to specify geometries which are snapped to.
-   //snap.enable();
+   var layer = new maptalks.GlowLayer({
+                color: [255, 0, 0, 0.2],
+                lineJoin : 'round'
+            }).addTo(map);
 </script>
 ```
 ## Supported Browsers
