@@ -1,7 +1,9 @@
 import * as maptalks from 'maptalks';
 
 const options = {
-    color:[255, 106, 106, 0.2],
+    color:[255, 106, 106, 0.1],
+    linecolor:[255, 106, 106, 1],
+    fillcolor:[255, 106, 106, 0.1],
     lineJoin:'round'
 };
 
@@ -86,9 +88,9 @@ class GlowLayerRenderer extends maptalks.renderer.OverlayLayerCanvasRenderer {
             context.lineWidth = (j + 1) * 4 - 2;
             context.lineJoin = this.layer.options['lineJoin'];
             if (j === 0) {
-                context.strokeStyle = '#fff';
+                context.strokeStyle = this._getStrokeStyle(this.layer.options['linecolor']);
             } else {
-                context.strokeStyle = this._getStrokeStyle();
+                context.strokeStyle = this._getStrokeStyle(this.layer.options['color']);
             }
             const len = coordinates.length;
             for (let i = 0; i < len; i++) {
@@ -104,13 +106,14 @@ class GlowLayerRenderer extends maptalks.renderer.OverlayLayerCanvasRenderer {
                 context.stroke();
             } else if (type.indexOf('Polygon') > -1) {
                 context.closePath();
+                context.fillStyle = this._getStrokeStyle(this.layer.options['fillcolor']);
+                context.fill();
                 context.stroke();
             }
         }
     }
 
-    _getStrokeStyle() {
-        const color = this.layer.options['color'];
+    _getStrokeStyle(color) {
         let strokeStyle = null;
         if (typeof color === 'string' && color.indexOf('#') > -1) {
             strokeStyle = color;

@@ -1,5 +1,5 @@
 /*!
- * maptalks.GlowLayer v0.1.2
+ * maptalks.GlowLayer v0.1.0
  * LICENSE : MIT
  * (c) 2016-2017 maptalks.org
  */
@@ -21,14 +21,16 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : _defaults(subClass, superClass); }
 
 var options = {
-    color: [255, 106, 106, 0.2],
+    color: [255, 106, 106, 0.1],
+    linecolor: [255, 106, 106, 1],
+    fillcolor: [255, 106, 106, 0.1],
     lineJoin: 'round'
 };
 
 /**
- * A snap tool used for mouse point to adsorb geometries, it extends maptalks.Class.
+ * A layer used to drawing geometry with glowing effects, it extends maptalks.VectorLayer.
  *
- * Thanks to rbush's author, this pluging has used the rbush to inspect surrounding geometries within tolerance(https://github.com/mourner/rbush)
+ * Thanks to Ashley Sheridan, I had got inspiration in this amazing websit(http://www.ashleysheridan.co.uk/blog/Animated+Glowing+Lines+in+Canvas)
  *
  * @author liubgithub(https://github.com/liubgithub)
  *
@@ -50,7 +52,7 @@ var GlowLayer = function (_maptalks$VectorLayer) {
         geometries.forEach(function (geo, index) {
             var type = geo.getType();
             if (type.indexOf('Polygon') < 0 && type.indexOf('LineString') < 0) {
-                throw new Error('The geometry at ' + index + ' can not be added to layer');
+                throw new Error('The geometry at ' + index + ' can not be added to glowing layer');
             }
         });
         return _maptalks$VectorLayer.prototype.addGeometry.apply(this, arguments);
@@ -71,21 +73,17 @@ var GlowLayerRenderer = function (_maptalks$renderer$Ov) {
     }
 
     GlowLayerRenderer.prototype.draw = function draw() {
-        var drawCount = 0;
         this.prepareCanvas();
         this._currentGeometries = this.layer.getGeometries();
         for (var i = 0; i < this._currentGeometries.length; i++) {
             var geo = this._currentGeometries[i];
             if (this._isInViewExtent(geo)) {
                 this._drawGeometry(geo);
-                drawCount += 1;
             }
         }
         if (!this.layer.isLoaded()) {
             this.completeRender();
         }
-        console.log(drawCount);
-        drawCount = 0;
     };
 
     GlowLayerRenderer.prototype._isInViewExtent = function _isInViewExtent(geometry) {
@@ -123,9 +121,9 @@ var GlowLayerRenderer = function (_maptalks$renderer$Ov) {
             context.lineWidth = (j + 1) * 4 - 2;
             context.lineJoin = this.layer.options['lineJoin'];
             if (j === 0) {
-                context.strokeStyle = '#fff';
+                context.strokeStyle = this._getStrokeStyle(this.layer.options['linecolor']);
             } else {
-                context.strokeStyle = this._getStrokeStyle();
+                context.strokeStyle = this._getStrokeStyle(this.layer.options['color']);
             }
             var len = coordinates.length;
             for (var i = 0; i < len; i++) {
@@ -141,13 +139,14 @@ var GlowLayerRenderer = function (_maptalks$renderer$Ov) {
                 context.stroke();
             } else if (type.indexOf('Polygon') > -1) {
                 context.closePath();
+                context.fillStyle = this._getStrokeStyle(this.layer.options['fillcolor']);
+                context.fill();
                 context.stroke();
             }
         }
     };
 
-    GlowLayerRenderer.prototype._getStrokeStyle = function _getStrokeStyle() {
-        var color = this.layer.options['color'];
+    GlowLayerRenderer.prototype._getStrokeStyle = function _getStrokeStyle(color) {
         var strokeStyle = null;
         if (typeof color === 'string' && color.indexOf('#') > -1) {
             strokeStyle = color;
@@ -168,6 +167,6 @@ exports.GlowLayer = GlowLayer;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-typeof console !== 'undefined' && console.log('maptalks.GlowLayer v0.1.2, requires maptalks@^0.16.0.');
+typeof console !== 'undefined' && console.log('maptalks.GlowLayer v0.1.0, requires maptalks@^0.16.0.');
 
 })));
